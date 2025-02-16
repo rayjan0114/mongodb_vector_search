@@ -19,3 +19,7 @@ $(TARGET): $(SRCS)
 # Clean Rule
 clean:
 	rm -f $(TARGET)
+
+mrun:
+	make
+	./$(TARGET)

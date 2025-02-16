@@ -1,10 +1,24 @@
+import glob
+import json
 import os
+
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision import datasets, transforms
-from torchvision.models import efficientnet_v2_m, EfficientNet_V2_M_Weights
+from torchvision.models import EfficientNet_V2_M_Weights, efficientnet_v2_m
 from tqdm import tqdm
-import json
+
+
+def load_embeddings_and_file_paths(filepath):
+    embeddings = []
+    file_paths = []
+    for file in glob.glob(filepath):
+        with open(file, "r") as f:
+            embedding = json.load(f)
+            embeddings.append(embedding)
+            file_paths.append(file)
+    return np.array(embeddings), file_paths
 
 
 def save_embedding(file_path, embedding):
@@ -20,7 +34,7 @@ def save_embedding(file_path, embedding):
 
 
 def main():
-    data_dir = 'animals10/raw-img'
+    data_dir = "animals10/raw-img"
     torch.hub.set_dir(os.getcwd())  # Sets cache directory for models
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
@@ -45,7 +59,7 @@ def main():
 
             embeddings = feature_extractor(images).squeeze(-1).squeeze(-1)  # Shape: (batch_size, 1280)
 
-            batch_file_paths = image_paths[batch_idx * len(images):(batch_idx + 1) * len(images)]
+            batch_file_paths = image_paths[batch_idx * len(images) : (batch_idx + 1) * len(images)]
 
             for file_path, embedding in zip(batch_file_paths, embeddings):
                 assert dataset.class_to_idx[file_path.split("/")[2]] == labels[0].item()
