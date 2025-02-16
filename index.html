@@ -77,7 +77,6 @@
             selectedFileName = file.name; // Store only the file name
         });
 
-        // When the "Query" button is clicked, send request
         document.getElementById("queryButton").addEventListener("click", async function() {
             if (!selectedFileName) {
                 alert("Please select an image first!");
@@ -85,14 +84,12 @@
             }
 
             try {
-                // Fetch the real embedding file from the backend
                 const imageInfoResponse = await fetch(`http://localhost:8765/get_image_info?file=${selectedFileName}`);
                 if (!imageInfoResponse.ok) throw new Error("Failed to load embedding");
 
                 const imageInfo = await imageInfoResponse.json();
                 console.log(imageInfo);
 
-                // Send the query to the backend
                 const queryResponse = await fetch("http://localhost:8765/query", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -111,10 +108,9 @@
             }
         });
 
-        // Display retrieved images
         function renderResults(results) {
             const container = document.getElementById("results");
-            container.innerHTML = ""; // Clear previous results
+            container.innerHTML = "";
 
             results.forEach(result => {
                 const div = document.createElement("div");
@@ -137,4 +133,3 @@
 
 </body>
 </html>
-```
