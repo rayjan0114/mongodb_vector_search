@@ -1,0 +1,5 @@
+torch
+torchvision
+kaggle
+ipython
+numpy==1.26.0
