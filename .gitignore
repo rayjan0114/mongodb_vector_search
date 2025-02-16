@@ -22,3 +22,4 @@ checkpoints
 *.pth
 *.pt
 .vscode
+image_name_to_path.json

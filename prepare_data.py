@@ -1,3 +1,4 @@
+import shutil
 import glob
 import json
 import os
@@ -12,6 +13,7 @@ from torchvision.models import EfficientNet_V2_M_Weights, efficientnet_v2_m
 from tqdm import tqdm
 from pathlib import Path
 from PIL import Image
+import uuid
 import requests
 
 DATA_DIR = "animals10/raw-img"
@@ -70,9 +72,28 @@ def convert_images_to_jpg():
         Path(file_path).unlink()
         print(f"Deleted original file: {file_path}")
 
+def embedding_path_to_image_path(embedding_path):
+    return embedding_path.replace("embedding", "raw-img").replace(".json", ".jpg")
+
+def image_path_to_embedding_path(image_path):
+    return image_path.replace("raw-img", "embedding").replace(".jpg", ".json")
+
+def prepare_image_name_to_path():
+    image_name_to_path = {}
+    for file_path in glob.glob(f"{DATA_DIR}/*/*.jpg"):
+        file_name = os.path.basename(file_path)
+        if file_name in image_name_to_path:
+            file_name = f"{uuid.uuid4()}.jpg"
+            shutil.move(file_path, os.path.join(os.path.dirname(file_path), file_name))
+        image_name_to_path[file_name] = file_path
+    with open("image_name_to_path.json", "w") as f:
+        json.dump(image_name_to_path, f)
+    return image_name_to_path
+
 
 def main():
     convert_images_to_jpg()
+    prepare_image_name_to_path()
     torch.hub.set_dir(os.getcwd())  # Sets cache directory for models
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")

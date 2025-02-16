@@ -16,11 +16,16 @@ std::string embedding_path_to_image_path(const std::string& embedding_path) {
     return image_path.replace(image_path.find("embedding"), 9, "raw-img").replace(image_path.find(".json"), 5, ".jpg");
 }
 
+std::string image_path_to_embedding_path(const std::string& image_path) {
+    std::string embedding_path = image_path;
+    return embedding_path.replace(embedding_path.find("raw-img"), 7, "embedding").replace(embedding_path.find(".jpg"), 4, ".json");
+}
+
 // 🔹 Function: Load all embeddings from JSON files
 std::pair<Eigen::MatrixXf, std::vector<std::string>> load_embeddings(const std::string& directory) {
     std::vector<std::vector<float>> embeddings_list;
     std::vector<std::string> file_paths;
-    int feature_size = -1;
+    std::size_t feature_size = -1;
 
     for (const auto& entry : fs::recursive_directory_iterator(directory)) {
         if (entry.path().extension() == ".json") {
@@ -120,19 +125,87 @@ public:
     }
 };
 
+
+void enable_cors(httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+}
+
+std::unordered_map<std::string, std::string> read_image_name_to_path() {
+    std::ifstream file("image_name_to_path.json");
+    nlohmann::json j;
+    file >> j;
+    return j.get<std::unordered_map<std::string, std::string>>();
+}
+
 int main() {
     httplib::Server svr;
 
-    // 🔹 Load embeddings before starting the server
+    std::cout << "Loading embeddings..." << std::endl;
     auto [embeddings, file_paths] = load_embeddings("animals10/embedding/");
+    auto image_name_to_path = read_image_name_to_path();
     QueryEngine query_engine(embeddings, file_paths);
     std::cout << "Loaded " << embeddings.rows() << " embeddings.\n";
 
+    // 🔹 Handle preflight requests (CORS)
+    svr.Options(".*", [](const httplib::Request&, httplib::Response& res) {
+        enable_cors(res);
+        res.status = 200; // Allow the preflight check to succeed
+    });
+
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
+        enable_cors(res);
         res.set_content("OK", "text/plain");
     });
 
+    svr.Get("/get_image_info", [&](const httplib::Request& req, httplib::Response& res) {
+        enable_cors(res);
+
+        std::string file_name = req.get_param_value("file");
+        std::string file_path = image_name_to_path[file_name];
+        std::string embedding_path = image_path_to_embedding_path(file_path);
+        std::cout << "file_path: " << file_path << std::endl;
+        std::ifstream file(embedding_path);
+        if (!file.is_open()) {
+            res.status = 404;
+            res.set_content("File not found", "text/plain");
+            return;
+        }
+        nlohmann::json embedding_json;
+        file >> embedding_json;
+    
+        nlohmann::json response;
+        response["embedding"] = embedding_json;  // The array from the .json file
+        response["file_path"] = file_path;       // The original (raw image) path
+
+        res.set_content(response.dump(), "application/json");
+    });
+
+    svr.Get("/get_image", [](const httplib::Request& req, httplib::Response& res) {
+        enable_cors(res);
+        if (!req.has_param("file")) {
+            res.status = 400;
+            res.set_content("Missing file parameter", "text/plain");
+            return;
+        }
+
+        std::string file_path =  req.get_param_value("file");
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file.is_open()) {
+            res.status = 404;
+            res.set_content("File not found", "text/plain");
+            return;
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        res.set_content(buffer.str(), "image/jpeg");
+    });
+
+
     svr.Post("/query", [&query_engine](const httplib::Request& req, httplib::Response& res) {
+        enable_cors(res);
         try {
             auto json = nlohmann::json::parse(req.body);
             std::vector<float> embedding_vector = json["embedding"].get<std::vector<float>>();
