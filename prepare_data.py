@@ -17,7 +17,7 @@ import requests
 DATA_DIR = "animals10/raw-img"
 
 def test_server(file_path):
-    url = "http://0.0.0.0:1234/query"
+    url = "http://0.0.0.0:8765/query"
 
     with open(file_path, "r") as f:
         print(file_path)
