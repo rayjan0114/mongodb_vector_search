@@ -1,5 +1,7 @@
-torch
-torchvision
-kaggle
-ipython
+torch=2.2.2
+torchvision=0.17.2
+kaggle=1.6.17
+ipython==8.18.1
 numpy==1.26.0
+fire==0.7.0
+scipy==1.13.1
