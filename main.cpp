@@ -10,7 +10,6 @@
 
 namespace fs = std::filesystem;
 
-// 🔹 Utility: Convert embedding path to image path
 std::string embedding_path_to_image_path(const std::string& embedding_path) {
     std::string image_path = embedding_path;
     return image_path.replace(image_path.find("embedding"), 9, "raw-img").replace(image_path.find(".json"), 5, ".jpg");
@@ -21,7 +20,6 @@ std::string image_path_to_embedding_path(const std::string& image_path) {
     return embedding_path.replace(embedding_path.find("raw-img"), 7, "embedding").replace(embedding_path.find(".jpg"), 4, ".json");
 }
 
-// 🔹 Function: Load all embeddings from JSON files
 std::pair<Eigen::MatrixXf, std::vector<std::string>> load_embeddings(const std::string& directory) {
     std::vector<std::vector<float>> embeddings_list;
     std::vector<std::string> file_paths;
@@ -63,7 +61,6 @@ std::pair<Eigen::MatrixXf, std::vector<std::string>> load_embeddings(const std::
     return {embeddings, file_paths};
 }
 
-// 🔹 QueryEngine: Efficient similarity search
 class QueryEngine {
 private:
     Eigen::MatrixXf embeddings;
@@ -148,10 +145,9 @@ int main() {
     QueryEngine query_engine(embeddings, file_paths);
     std::cout << "Loaded " << embeddings.rows() << " embeddings.\n";
 
-    // 🔹 Handle preflight requests (CORS)
     svr.Options(".*", [](const httplib::Request&, httplib::Response& res) {
         enable_cors(res);
-        res.status = 200; // Allow the preflight check to succeed
+        res.status = 200;
     });
 
     svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
@@ -176,8 +172,8 @@ int main() {
         file >> embedding_json;
     
         nlohmann::json response;
-        response["embedding"] = embedding_json;  // The array from the .json file
-        response["file_path"] = file_path;       // The original (raw image) path
+        response["embedding"] = embedding_json;
+        response["file_path"] = file_path;
 
         res.set_content(response.dump(), "application/json");
     });
