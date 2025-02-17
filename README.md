@@ -38,3 +38,12 @@ make mrun
 ```bash
 open index.html
 ```
+
+## Dependencies
+This project uses the following libraries:
+
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib) (MIT License)
+- [nlohmann/json](https://github.com/nlohmann/json) (MIT License)
+- [Eigen](https://gitlab.com/libeigen/eigen) (MPL-2.0)
+
+These libraries are used under their respective open-source licenses.

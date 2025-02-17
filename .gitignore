@@ -2,6 +2,7 @@ animals10
 pyproject.toml
 poetry.lock
 cane
+*.mov
 eigen
 *.jpeg
 *.jpg
